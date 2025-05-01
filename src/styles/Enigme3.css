@@ -1,0 +1,218 @@
+.enigme3-container {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: linear-gradient(to bottom, #d0f0f7 0%, #a6d7e7 50%, #5dbcd2 80%, #357ca5 100%);
+  position: relative;
+}
+
+.enigme3-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: radial-gradient(ellipse at top, rgba(255,255,255,0.6) 0%, rgba(0,0,0,0) 70%);
+  z-index: -3;
+  opacity: 0.6;
+  animation: enigme3-cloudmove 60s linear infinite;
+}
+
+@keyframes enigme3-cloudmove {
+  0% { background-position: 0 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.enigme3-container::after {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60%;
+  background: linear-gradient(to bottom, #5dbcd2 0%, #357ca5 100%);
+  z-index: -2;
+  animation: enigme3-oceanwave 8s ease-in-out infinite;
+}
+
+@keyframes enigme3-oceanwave {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(10px); }
+}
+
+.enigme3-title {
+  margin-top: 2rem;
+  color: #003c5f;
+  text-shadow: 1px 1px 4px #fff;
+}
+
+.enigme3-alert {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 1rem;
+  font-weight: bold;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  animation: enigme3-slideDown 0.5s ease;
+}
+
+.enigme3-alert.warning {
+  background-color: #ffcccb;
+  color: #a50000;
+}
+
+.enigme3-alert.success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.enigme3-alert.error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+@keyframes enigme3-slideDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+.enigme3-buttons {
+  margin: 2rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.enigme3-buttons button {
+  padding: 1rem 2rem;
+  margin: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 8px;
+  border: none;
+  color: #01579b;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.enigme3-buttons button:hover {
+  background-color: #81d4fa;
+}
+
+.enigme3-result {
+  margin-top: 2rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #003c5f;
+  text-shadow: 1px 1px 2px #fff;
+}
+
+.enigme3-image-area {
+  position: relative;
+  display: inline-block;
+  margin-top: 1rem;
+  width: 100%;
+  height: 400px;
+}
+
+.enigme3-iceberg {
+  width: 200px;
+  height: 80px;
+  background: #e0f7fa;
+  border-radius: 50% / 30%;
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: background 1s ease;
+  z-index: 1;
+  overflow: hidden;
+  animation: enigme3-float 6s infinite ease-in-out;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes enigme3-float {
+  0%, 100% { transform: translate(-50%, 0px); }
+  50% { transform: translate(-50%, -10px); }
+}
+
+.enigme3-iceberg.cracked {
+  background: repeating-linear-gradient(
+    45deg,
+    #e0f7fa,
+    #e0f7fa 10px,
+    #ffffff 10px,
+    #ffffff 20px
+  );
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.enigme3-bear-img {
+  max-width: 150px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 180px;
+  z-index: 2;
+}
+
+.enigme3-gg-img {
+  position: absolute;
+  bottom: 25%;
+  left: 40%;
+  transform: translateX(-50%);
+  width: 150px;
+  z-index: 3;
+  animation: enigme3-bounce 1s infinite ease-in-out;
+}
+
+@keyframes enigme3-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes enigme3-slideToIsland {
+  0% {
+    bottom: 120px;
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    bottom: 250px;
+    transform: translateX(-50%) scale(0.8) translateY(-20px);
+  }
+}
+
+.enigme3-slide-to-island {
+  animation: enigme3-slideToIsland 3s ease-in-out forwards;
+}
+
+.enigme3-water {
+  position: absolute;
+  width: 100%;
+  height: 100px;
+  bottom: 0;
+  background-color: #4fc3f7;
+  z-index: 0;
+}
+
+.enigme3-island {
+  position: absolute;
+  bottom: 250px;
+  left: 70%;
+  width: 100px;
+  height: 60px;
+  background-color: #ffe082;
+  border-radius: 50%;
+  z-index: 0;
+}

@@ -1,0 +1,303 @@
+/* Bear-themed Scientific Game Home Page Styles */
+@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;700&family=Comic+Neue:wght@400;700&display=swap");
+
+.game-container {
+  background: linear-gradient(135deg, #a8dadc 0%, #457b9d 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #1d3557;
+  font-family: "Comic Neue", cursive;
+  background-image: url("data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+    linear-gradient(135deg, #a8dadc 0%, #457b9d 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Bear paw prints in the background */
+.game-container:before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: 40px;
+  width: 30px;
+  height: 30px;
+  background: rgba(97, 67, 38, 0.2);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  box-shadow: 15px -5px 0 rgba(97, 67, 38, 0.2), -5px 10px 0 rgba(97, 67, 38, 0.2), 10px 5px 0 rgba(97, 67, 38, 0.2);
+  transform: rotate(20deg);
+}
+
+.game-container:after {
+  content: "";
+  position: absolute;
+  bottom: 40px;
+  right: 60px;
+  width: 30px;
+  height: 30px;
+  background: rgba(97, 67, 38, 0.2);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  box-shadow: 15px -5px 0 rgba(97, 67, 38, 0.2), -5px 10px 0 rgba(97, 67, 38, 0.2), 10px 5px 0 rgba(97, 67, 38, 0.2);
+  transform: rotate(-30deg);
+}
+
+.game-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+/* Bear ears on the title */
+.game-title {
+  font-family: "Fredoka", sans-serif;
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #614326;
+  text-shadow: 3px 3px 0 #e9c46a, -1px -1px 0 #1d3557, 1px -1px 0 #1d3557, -1px 1px 0 #1d3557, 1px 1px 0 #1d3557;
+  letter-spacing: 1px;
+  position: relative;
+  display: inline-block;
+  padding: 0 20px;
+}
+
+.game-title:before,
+.game-title:after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  width: 40px;
+  height: 40px;
+  background: #614326;
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.game-title:before {
+  left: -5px;
+}
+
+.game-title:after {
+  right: -5px;
+}
+
+
+.enigma-links-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 1000px;
+  position: relative;
+  z-index: 1;
+}
+
+.enigma-link {
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.enigma-link:hover {
+  transform: translateY(-8px);
+}
+
+.enigma-card {
+  background: #f1faee;
+  border: 4px solid #614326;
+  border-radius: 20px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 180px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 0 #614326, 0 10px 20px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+/* Bear paw print on each card */
+.enigma-card:before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  background: rgba(97, 67, 38, 0.3);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  box-shadow: 10px -3px 0 rgba(97, 67, 38, 0.3), -3px 7px 0 rgba(97, 67, 38, 0.3), 7px 4px 0 rgba(97, 67, 38, 0.3);
+  transform: rotate(20deg);
+}
+
+.enigma-card:hover {
+  background: #fff8e6;
+  box-shadow: 0 4px 0 #614326, 0 15px 25px rgba(0, 0, 0, 0.3);
+}
+
+.enigma-number {
+  font-family: "Fredoka", sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: #e76f51;
+  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.enigma-text {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  position: relative;
+  z-index: 1;
+  color: #1d3557;
+  background: rgba(233, 196, 106, 0.3);
+  padding: 5px 15px;
+  border-radius: 10px;
+}
+
+/* Bear icon for each adventure */
+.enigma-icon {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  width: 40px;
+  height: 40px;
+  background: #614326;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f1faee;
+  font-size: 1.2rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .game-title {
+    font-size: 2.5rem;
+  }
+
+  .enigma-links-container {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+  }
+
+  .enigma-card {
+    height: 140px;
+  }
+
+  .game-title:before,
+  .game-title:after {
+    width: 30px;
+    height: 30px;
+    top: -15px;
+  }
+}
+
+/* Animation for the bear character */
+@keyframes bearWave {
+  0% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(15deg);
+  }
+  30% {
+    transform: rotate(0deg);
+  }
+  45% {
+    transform: rotate(15deg);
+  }
+  60% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.bear-character {
+  position: absolute;
+  bottom: -20px;
+  left: 20px;
+  width: 120px;
+  height: 120px;
+  background: #614326;
+  border-radius: 60% 60% 50% 50%;
+  z-index: 0;
+}
+
+.bear-character:before,
+.bear-character:after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  width: 30px;
+  height: 30px;
+  background: #614326;
+  border-radius: 50%;
+}
+
+.bear-character:before {
+  left: 15px;
+}
+
+.bear-character:after {
+  right: 15px;
+}
+
+.bear-arm {
+  position: absolute;
+  top: 30px;
+  right: -10px;
+  width: 30px;
+  height: 60px;
+  background: #614326;
+  border-radius: 20px;
+  transform-origin: top center;
+  animation: bearWave 5s infinite;
+}
+
+.bear-face {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  width: 60px;
+  height: 40px;
+  background: #f1faee;
+  border-radius: 40% 40% 60% 60%;
+}
+
+.bear-eye {
+  position: absolute;
+  top: 10px;
+  width: 10px;
+  height: 10px;
+  background: #1d3557;
+  border-radius: 50%;
+}
+
+.bear-eye.left {
+  left: 15px;
+}
+
+.bear-eye.right {
+  right: 15px;
+}
+
+.bear-nose {
+  position: absolute;
+  bottom: 10px;
+  left: 25px;
+  width: 10px;
+  height: 8px;
+  background: #1d3557;
+  border-radius: 50%;
+}

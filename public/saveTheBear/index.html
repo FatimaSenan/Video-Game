@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مغامرة في القطب الشمالي: أوقف التلوث!</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        #thermometer {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 200px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid #333;
+        }
+        #temperature {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 70%;
+            background: linear-gradient(to top, #ff0000, #ff8800);
+            transition: height 0.5s;
+        }
+        #tempValue {
+            position: absolute;
+            top: -25px;
+            width: 100%;
+            text-align: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            max-width: 300px;
+        }
+        @keyframes popIn {
+    from {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="thermometer">
+            <div id="temperature"></div>
+            <div id="tempValue">5°C</div>
+        </div>
+        <div id="instructions">
+      
+            <p><strong>المهمة:</strong> ساعد الدب القطبي في العثور على المصنع ووقف التلوث!</p>
+<p>اتبع الجبال الجليدية الزرقاء الخاصة للعثور على المصنع.</p>
+<p><strong>التحكم:</strong><br>
+W/A/S/D أو الأسهم - تحريك الدب<br>
+الفأرة - تحريك النظر<br>
+</p>
+
+        </div>
+            <!-- ******************************** SPECIAL EFFECT ************************** -->
+
+            <!-- CONFETTI POP-UPS CANVAS  -->
+            <canvas id="confettiCanvas" style="position:absolute; top:0; left:0; pointer-events:none; z-index:999;"></canvas>
+
+            <!-- Add audio sound effect 🤓 -->
+            <audio id="snowSound" src="assets/sounds/snowSoundEffect.weba" loop></audio>
+
+
+    </div>
+
+    <script>
+        const snowSound = document.getElementById('snowSound');
+
+        // Start snow sound
+        function startSnowSound() {
+            snowSound.volume = 0.3; // adjust as needed
+            snowSound.play().catch((e) => {
+                console.log("Autoplay blocked — wait for user interaction.");
+            });
+        }
+
+        // Stop snow sound
+        function stopSnowSound() {
+            snowSound.pause();
+            snowSound.currentTime = 0;
+        }
+
+        document.addEventListener('click', () => {
+    startSnowSound();
+}, { once: true });
+
+
+    </script>
+    <script type="module">
+        // uncomment this line and comment the line 123 if you want to use the online version :) 
+        // import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js';
+        import * as THREE from './ThreeJS/three.module.min.js'
+        // Game variables
+        let scene, camera, renderer, bear, factory;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
+        let gameStarted = false;
+        let temperature = 5; // starting temperature
+        let factoryFound = false;
+        let skyColor = new THREE.Color(0xaaddff); // starting sky color
+        let pollutedSkyColor = new THREE.Color(0xaaaaaa); // polluted gray sky : 0xaaaaaa
+        
+        // Animation variables
+        let clock = new THREE.Clock();
+        let walkingCycle = 0;
+        let isWalking = false;
+        let snowParticles = [];
+        let icebergs = [];
+        let foundCheckpoints = 0;
+
+        // Keyboard controls
+        const keysPressed = {};
+        
+        // Setup the game
+        function createSnow() {
+            // Create snow particles system
+            const snowGroup = new THREE.Group();
+            const snowCount = 2000;
+            
+            // Create snow particle geometry and material
+            const snowGeometry = new THREE.BufferGeometry();
+            const snowMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.2,
+                transparent: true,
+                opacity: 0.8,
+                map: createSnowflakeTexture(),
+                depthWrite: false
+            });
+            
+            // Create positions for each snowflake
+            const positions = new Float32Array(snowCount * 3);
+            const velocities = [];
+            
+            for (let i = 0; i < snowCount; i++) {
+                // Position snowflakes in a large box area around the scene
+                const x = (Math.random() - 0.5) * 200;
+                const y = Math.random() * 80;
+                const z = (Math.random() - 0.5) * 200;
+                
+                positions[i * 3] = x;
+                positions[i * 3 + 1] = y;
+                positions[i * 3 + 2] = z;
+                
+                // Add random velocity for animation
+                velocities.push({
+                    x: (Math.random() - 0.5) * 0.05,
+                    y: -0.1 - Math.random() * 0.1,
+                    z: (Math.random() - 0.5) * 0.05
+                });
+            }
+            
+            snowGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const snowParticleSystem = new THREE.Points(snowGeometry, snowMaterial);
+            snowGroup.add(snowParticleSystem);
+            scene.add(snowGroup);
+            
+            // Store particles for animation
+            snowParticles.push({
+                system: snowParticleSystem,
+                geometry: snowGeometry,
+                velocities: velocities
+            });
+        }
+        
+        function createSnowflakeTexture() {
+            // Create a canvas texture for snowflakes
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const context = canvas.getContext('2d');
+            
+            // Draw a circle for the snowflake
+            context.beginPath();
+            context.arc(16, 16, 8, 0, Math.PI * 2, false);
+            context.fillStyle = 'white';
+            context.fill();
+            
+            // Create a texture from the canvas
+            const texture = new THREE.CanvasTexture(canvas);
+            return texture;
+        }
+        
+        function animateSnow() {
+            if (snowParticles.length === 0) return;
+            
+            // Update each snow particle system
+            for (const particles of snowParticles) {
+                const positions = particles.geometry.attributes.position.array;
+                
+                for (let i = 0; i < positions.length / 3; i++) {
+                    // Update positions based on velocity
+                    positions[i * 3] += particles.velocities[i].x;
+                    positions[i * 3 + 1] += particles.velocities[i].y;
+                    positions[i * 3 + 2] += particles.velocities[i].z;
+                    
+                    // Reset particles that fall below the ground
+                    if (positions[i * 3 + 1] < 0) {
+                        positions[i * 3] = (Math.random() - 0.5) * 200;
+                        positions[i * 3 + 1] = 80;
+                        positions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+                    }
+                }
+                
+                particles.geometry.attributes.position.needsUpdate = true;
+            }
+        }
+        
+        function animateIcebergs() {
+            if (icebergs.length === 0 || !temperature) return;
+            
+            const meltSpeed = 0.001;
+            
+            for (const iceberg of icebergs) {
+                // Only animate melting if temperature is high enough and iceberg is set to melt
+                if (temperature > 0 && iceberg.userData.melting) {
+                    // Slowly sink the iceberg
+                    if (iceberg.position.y > 0) {
+                        iceberg.position.y -= meltSpeed * temperature;
+                    }
+                    
+                    // Animate water puddles
+                    iceberg.traverse((child) => {
+                        if (child.isMesh && child.userData.melting) {
+                            // Expand puddles
+                            const meltFactor = temperature * 0.001;
+                            child.scale.x += meltFactor;
+                            child.scale.z += meltFactor;
+                        }
+                    });
+                } else if (temperature <= 0 && !factoryFound) {
+                    // If temperature drops, start restoring icebergs
+                    if (iceberg.position.y < iceberg.userData.originalHeight) {
+                        iceberg.position.y += meltSpeed * 2;
+                        
+                        if (iceberg.position.y > iceberg.userData.originalHeight) {
+                            iceberg.position.y = iceberg.userData.originalHeight;
+                        }
+                    }
+                    
+                    // Shrink water puddles back
+                    iceberg.traverse((child) => {
+                        if (child.isMesh && child.userData.melting && child.userData.originalScale) {
+                            child.scale.lerp(child.userData.originalScale, 0.01);
+                        }
+                    });
+                }
+                
+                // If it's a marker iceberg, make it glow/pulse
+                if (iceberg.userData.isMarker) {
+                    const pulseSpeed = 1.5;
+                    const time = Date.now() * 0.001;
+                    
+                    // Make the glow pulse
+                    if (iceberg.children[1]) { // The glow is the second child
+                        iceberg.children[1].material.opacity = 0.2 + 0.1 * Math.sin(time * pulseSpeed);
+                    }
+                    
+                    // Rotate the symbol on top
+                    if (iceberg.children[2]) { // The symbol is the third child
+                        iceberg.children[2].rotation.y += 0.01;
+                    }
+                }
+            }
+        }
+        
+        function animateBearWalking() {
+            if (!bear || !bear.userData.legJoints) return;
+            
+            // Update the walking cycle if the bear is moving
+            if (isWalking) {
+                walkingCycle += 0.6;
+                
+                // Get leg joints
+                const { frontLeft, frontRight, backLeft, backRight } = bear.userData.legJoints;
+                
+                // Animate the legs with opposite phases
+                frontLeft.shoulder.rotation.x = Math.sin(walkingCycle) * 0.3;
+                frontLeft.knee.rotation.x = Math.sin(walkingCycle + Math.PI/4) * 0.2;
+                
+                frontRight.shoulder.rotation.x = Math.sin(walkingCycle + Math.PI) * 0.3;
+                frontRight.knee.rotation.x = Math.sin(walkingCycle + Math.PI + Math.PI/4) * 0.2;
+                
+                backLeft.hip.rotation.x = Math.sin(walkingCycle + Math.PI) * 0.3;
+                backLeft.knee.rotation.x = Math.sin(walkingCycle + Math.PI*5/4) * 0.2;
+                
+                backRight.hip.rotation.x = Math.sin(walkingCycle) * 0.3;
+                backRight.knee.rotation.x = Math.sin(walkingCycle + Math.PI*5/4) * 0.2;
+                
+                // Add a slight body motion
+                bear.children[0].position.y = 1.5 + Math.abs(Math.sin(walkingCycle)) * 0.1;
+            } else {
+                // Reset leg positions when not walking
+                const { frontLeft, frontRight, backLeft, backRight } = bear.userData.legJoints;
+                
+                frontLeft.shoulder.rotation.x = 0;
+                frontLeft.knee.rotation.x = 0;
+                
+                frontRight.shoulder.rotation.x = 0;
+                frontRight.knee.rotation.x = 0;
+                
+                backLeft.hip.rotation.x = 0;
+                backLeft.knee.rotation.x = 0;
+                
+                backRight.hip.rotation.x = 0;
+                backRight.knee.rotation.x = 0;
+                
+                bear.children[0].position.y = 1.5;
+            }
+        }
+        
+        function init() {
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = pollutedSkyColor;
+            scene.fog = new THREE.Fog(pollutedSkyColor, 10, 100);
+            
+            // Create snow particles
+            createSnow();
+            
+            // Setup camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 3, 10);
+            
+            // Setup renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.getElementById('gameContainer').appendChild(renderer.domElement);
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.75); // TODO: light to the scene ...
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 7);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 1024;
+            directionalLight.shadow.mapSize.height = 1024;
+            scene.add(directionalLight);
+            
+
+            // Create ground with more segments for better snow detail
+const groundGeometry = new THREE.PlaneGeometry(200, 200, 32, 32);
+
+// Add some slight variation to the geometry for snow texture
+for (let i = 0; i < groundGeometry.attributes.position.count; i++) {
+    const y = groundGeometry.attributes.position.getY(i);
+    // Add small random height variations for snow texture (more subtle)
+    const variation = Math.random() * 0.08;
+    groundGeometry.attributes.position.setY(i, y + variation);
+}
+groundGeometry.computeVertexNormals(); // Recompute normals after modifying vertices
+
+// Create realistic snow material
+const groundMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0xffffff,        // Pure white as base for snow
+    roughness: 0.95,        // High roughness for snow
+    metalness: 0.0,         // No metalness for snow
+    emissive: 0x112233,     // Slight blue-ish emissive for snow effect
+    emissiveIntensity: 0.05 // Very subtle
+});
+
+// Create the ground mesh
+const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+ground.rotation.x = -Math.PI / 2; // Rotate to be horizontal
+ground.receiveShadow = true;      // Allow ground to receive shadows
+scene.add(ground);
+// Create a circular white texture using canvas
+function createCircleTexture() {
+    const size = 64;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // Draw a white circle with soft edges
+    const gradient = ctx.createRadialGradient(
+        size / 2, size / 2, 0,
+        size / 2, size / 2, size / 2
+    );
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+}
+
+// Add simple snow sparkle effect (optional)
+function addSnowSparkles() {
+    const sparkleCount = 50000;
+    const positions = new Float32Array(sparkleCount * 3);
+    
+    for (let i = 0; i < sparkleCount; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 200;     // x
+        positions[i * 3 + 1] = 0.05;                        // y (just above ground)
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 200; // z
+    }
+    
+
+    const sparkleTexture = createCircleTexture();
+
+// Geometry
+const sparkleGeometry = new THREE.BufferGeometry();
+sparkleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+// Material with round look
+const sparkleMaterial = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 0.5,
+    transparent: true,
+    opacity: 0.8,
+    map: sparkleTexture,
+    alphaTest: 0.5,
+    depthWrite: false,
+    sizeAttenuation: true,
+    blending: THREE.AdditiveBlending
+});
+
+    
+    const sparkles = new THREE.Points(sparkleGeometry, sparkleMaterial);
+    scene.add(sparkles);
+    
+    // Store reference to geometry for animation
+    sparkles.userData.geometry = sparkleGeometry;
+    sparkles.userData.positions = positions;
+    
+    return sparkles;
+}
+
+// Create sparkles and store reference
+const snowSparkles = addSnowSparkles();
+
+// Add this function to your animation loop
+function animateSnowSparkles(time) {
+    if (!snowSparkles) return;
+    
+    const positions = snowSparkles.userData.positions;
+    
+    for (let i = 0; i < positions.length / 3; i++) {
+        // Subtle height animation to create "twinkling" effect
+        positions[i * 3 + 1] = 0.05 + Math.sin(time * 0.001 + i) * 0.02;
+    }
+    
+    snowSparkles.userData.geometry.attributes.position.needsUpdate = true;
+}
+
+
+
+
+            // Create polar bear (simplified box for now)
+            createPolarBear();
+            
+            // Create factory with smoke
+            createFactory();
+            
+            // Create icebergs
+            icebergs = createIcebergs();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Start the game loop
+            animate();
+            gameStarted = true;
+            
+            // Update the thermometer display
+            updateThermometer();
+        }
+                
+
+        function createPolarBear() {
+    // Create a more realistic polar bear
+    const bearBody = new THREE.Group();
+    
+    // Main body - more organic shape using ellipsoid
+    const bodyGeometry = new THREE.SphereGeometry(1.5, 24, 18);
+    bodyGeometry.scale(1, 0.8, 1.5);
+    const furMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x8b4513,
+        roughness: 0.9,
+        metalness: 0.5
+    });
+    const body = new THREE.Mesh(bodyGeometry, furMaterial);
+    body.position.y = 1.5;
+    body.castShadow = true;
+    bearBody.add(body);
+    
+    // Head - more rounded
+    const headGeometry = new THREE.SphereGeometry(1, 24, 18);
+    headGeometry.scale(1, 0.9, 0.9);
+    const head = new THREE.Mesh(headGeometry, furMaterial);
+    head.position.set(0, 2.5, -1.5); // Changed Z from 1.5 to -1.5
+    head.castShadow = true;
+    bearBody.add(head);
+    
+    // Snout - more rounded
+    const snoutGeometry = new THREE.SphereGeometry(0.5, 16, 12);
+    snoutGeometry.scale(0.7, 0.5, 0.8);
+    const snoutMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x222222,
+        roughness: 0.7 
+    });
+    const snout = new THREE.Mesh(snoutGeometry, snoutMaterial);
+    snout.position.set(0, 2.3, -2.3); // Changed Z from 2.3 to -2.3
+    bearBody.add(snout);
+    
+    // Eyes
+    const eyeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+    const eyeMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+    
+    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    leftEye.position.set(0.4, 2.7, -2.1); // Changed Z from 2.1 to -2.1
+    bearBody.add(leftEye);
+    
+    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    rightEye.position.set(-0.4, 2.7, -2.1); // Changed Z from 2.1 to -2.1
+    bearBody.add(rightEye);
+    
+    // Ears - more rounded
+    const earGeometry = new THREE.SphereGeometry(0.25, 12, 10);
+    earGeometry.scale(1, 1, 0.5);
+    
+    const leftEar = new THREE.Mesh(earGeometry, furMaterial);
+    leftEar.position.set(0.7, 3.1, -1.3); // Changed Z from 1.3 to -1.3
+    bearBody.add(leftEar);
+    
+    const rightEar = new THREE.Mesh(earGeometry, furMaterial);
+    rightEar.position.set(-0.7, 3.1, -1.3); // Changed Z from 1.3 to -1.3
+    bearBody.add(rightEar);
+    
+    // Legs with joints for animation
+    // Front left leg
+    const shoulderJointFL = new THREE.Group();
+    shoulderJointFL.position.set(0.9, 1.2, -1.1); // Changed Z from 1.1 to -1.1
+    bearBody.add(shoulderJointFL);
+    
+    const upperLegFL = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.35, 0.3, 1, 12),
+        furMaterial
+    );
+    upperLegFL.position.y = -0.5;
+    upperLegFL.castShadow = true;
+    shoulderJointFL.add(upperLegFL);
+    
+    const kneeJointFL = new THREE.Group();
+    kneeJointFL.position.y = -1;
+    shoulderJointFL.add(kneeJointFL);
+    
+    const lowerLegFL = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.4, 0.8, 12),
+        furMaterial
+    );
+    lowerLegFL.position.y = -0.4;
+    lowerLegFL.castShadow = true;
+    kneeJointFL.add(lowerLegFL);
+    
+    // Front right leg
+    const shoulderJointFR = new THREE.Group();
+    shoulderJointFR.position.set(-0.9, 1.2, -1.1); // Changed Z from 1.1 to -1.1
+    bearBody.add(shoulderJointFR);
+    
+    const upperLegFR = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.35, 0.3, 1, 12),
+        furMaterial
+    );
+    upperLegFR.position.y = -0.5;
+    upperLegFR.castShadow = true;
+    shoulderJointFR.add(upperLegFR);
+    
+    const kneeJointFR = new THREE.Group();
+    kneeJointFR.position.y = -1;
+    shoulderJointFR.add(kneeJointFR);
+    
+    const lowerLegFR = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.4, 0.8, 12),
+        furMaterial
+    );
+    lowerLegFR.position.y = -0.4;
+    lowerLegFR.castShadow = true;
+    kneeJointFR.add(lowerLegFR);
+    
+    // Back left leg
+    const hipJointBL = new THREE.Group();
+    hipJointBL.position.set(0.9, 1.2, 1.1); // Changed Z from -1.1 to 1.1
+    bearBody.add(hipJointBL);
+    
+    const upperLegBL = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.35, 0.3, 1, 12),
+        furMaterial
+    );
+    upperLegBL.position.y = -0.5;
+    upperLegBL.castShadow = true;
+    hipJointBL.add(upperLegBL);
+    
+    const kneeJointBL = new THREE.Group();
+    kneeJointBL.position.y = -1;
+    hipJointBL.add(kneeJointBL);
+    
+    const lowerLegBL = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.4, 0.8, 12),
+        furMaterial
+    );
+    lowerLegBL.position.y = -0.4;
+    lowerLegBL.castShadow = true;
+    kneeJointBL.add(lowerLegBL);
+    
+    // Back right leg
+    const hipJointBR = new THREE.Group();
+    hipJointBR.position.set(-0.9, 1.2, 1.1); // Changed Z from -1.1 to 1.1
+    bearBody.add(hipJointBR);
+    
+    const upperLegBR = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.35, 0.3, 1, 12),
+        furMaterial
+    );
+    upperLegBR.position.y = -0.5;
+    upperLegBR.castShadow = true;
+    hipJointBR.add(upperLegBR);
+    
+    const kneeJointBR = new THREE.Group();
+    kneeJointBR.position.y = -1;
+    hipJointBR.add(kneeJointBR);
+    
+    const lowerLegBR = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.4, 0.8, 12),
+        furMaterial
+    );
+    lowerLegBR.position.y = -0.4;
+    lowerLegBR.castShadow = true;
+    kneeJointBR.add(lowerLegBR);
+    
+    // Add tail
+    const tailGeometry = new THREE.SphereGeometry(0.3, 16, 12);
+    tailGeometry.scale(1, 1, 1.2);
+    const tail = new THREE.Mesh(tailGeometry, furMaterial);
+    tail.position.set(0, 1.5, 1.7); // Changed Z from -1.7 to 1.7
+    bearBody.add(tail);
+    
+    // Store leg joints for animation
+    bearBody.userData.legJoints = {
+        frontLeft: { shoulder: shoulderJointFL, knee: kneeJointFL },
+        frontRight: { shoulder: shoulderJointFR, knee: kneeJointFR },
+        backLeft: { hip: hipJointBL, knee: kneeJointBL },
+        backRight: { hip: hipJointBR, knee: kneeJointBR }
+    };
+    
+    // Add bear to scene
+    scene.add(bearBody);
+    bear = bearBody;
+    bear.position.set(0, 0, 0);
+    
+    // Position camera relative to bear
+    updateCameraPosition();
+}
+
+
+        function createFactory() {
+            // Factory building group
+            factory = new THREE.Group();
+            
+            // Main building
+            const buildingGeometry = new THREE.BoxGeometry(10, 8, 10);
+            const buildingMaterial = new THREE.MeshStandardMaterial({ color: 0x555555 });
+            const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+            building.position.y = 4;
+            building.castShadow = true;
+            building.receiveShadow = true;
+            factory.add(building);
+            
+            // Roof
+            const roofGeometry = new THREE.ConeGeometry(7, 3, 4);
+            const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+            roof.position.y = 9.5;
+            roof.castShadow = true;
+            factory.add(roof);
+            
+            // Chimney
+            const chimneyGeometry = new THREE.CylinderGeometry(1, 1, 5, 16);
+            const chimneyMaterial = new THREE.MeshStandardMaterial({ color: 0x993333 });
+            const chimney = new THREE.Mesh(chimneyGeometry, chimneyMaterial);
+            chimney.position.set(3, 10, 3);
+            chimney.castShadow = true;
+            factory.add(chimney);
+            
+            // Create smoke particles
+            const smokeParticles = new THREE.Group();
+            factory.add(smokeParticles);
+            
+            for (let i = 0; i < 20; i++) {
+                const particleGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+                const particleMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xdddddd, 
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                
+                // Random position above chimney
+                particle.position.set(
+                    3 + (Math.random() - 0.5) * 2,
+                    12 + Math.random() * 5,
+                    3 + (Math.random() - 0.5) * 2
+                );
+                
+                // Add random velocity for animation
+                particle.userData.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.1,
+                    Math.random() * 0.1,
+                    (Math.random() - 0.5) * 0.1
+                );
+                
+                smokeParticles.add(particle);
+            }
+            
+            // Position the factory far from the bear
+            factory.position.set(100, 0, -30);
+            scene.add(factory);
+        }
+        
+        function createIcebergGradientTexture() {
+    const size = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, size);
+    gradient.addColorStop(0.0, '#ffffff');   // top: snow white
+    gradient.addColorStop(0.3, '#d8f0ff');   // middle: pale blue ice
+    gradient.addColorStop(0.7, '#a0c0cc');   // lower: deeper cold ice
+    gradient.addColorStop(1.0, '#3f3f3f');   // bottom: rocky gray
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1, size);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.magFilter = THREE.LinearFilter;
+    return texture;
+}
+
+
+        function createIcebergs() {
+            // Create an array to store the icebergs
+            const icebergs = [];
+            
+            // Create several icebergs around the area with more realistic shape and materials
+            for (let i = 0; i < 40; i++) {
+                // Create a more complex iceberg shape by combining geometries
+                const icebergGroup = new THREE.Group();
+                
+                // Create base shape with noise
+                const segments = 7 + Math.floor(Math.random() * 3); // 5-7 segments for base shape
+                const baseSize = 4 + Math.random() * 4;
+                const height = 4 + Math.random() * 10;
+                
+                // Create iceberg with custom geometry for more realistic shape
+                const baseGeometry = new THREE.CylinderGeometry(
+                    baseSize * 0.7, // top radius
+                    baseSize, // bottom radius
+                    height,
+                    segments, 
+                    4, // height segments
+                    false
+                );
+                
+                // Add noise to vertices for a more natural look
+                const positionAttribute = baseGeometry.getAttribute('position');
+                const vertex = new THREE.Vector3();
+                
+                for (let i = 0; i < positionAttribute.count; i++) {
+                    vertex.fromBufferAttribute(positionAttribute, i);
+                    
+                    // Don't deform the very bottom vertices (to keep it flat on ground)
+                    if (vertex.y > -height/2 + 0.1) {
+                        // Add noise based on position
+                        const noise = (Math.random() - 0.5) * 0.4 * baseSize;
+                        
+                        // Apply more noise to the top
+                        const topFactor = (vertex.y + height/2) / height; // 0 at bottom, 1 at top
+                        vertex.x += noise * topFactor;
+                        vertex.z += noise * topFactor;
+                        
+                        // Save modified vertex
+                        positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z);
+                    }
+                }
+                
+                baseGeometry.computeVertexNormals();
+                
+                // BACKUP :) ==> ice material
+                // const icebergMaterial = new THREE.MeshPhysicalMaterial({
+                //     color: 0xffffff,
+                //     roughness: 0.2,
+                //     metalness: 0.05,
+                //     transmission: 0.1, // semi-transparent
+                //     thickness: 1.5,    // refraction thickness
+                //     envMapIntensity: 1,
+                //     clearcoat: 0.8,
+                //     clearcoatRoughness: 0.2
+                // });
+                const icebergGradient = createIcebergGradientTexture();
+
+const icebergMaterial = new THREE.MeshPhysicalMaterial({
+    map: icebergGradient,
+    color: 0xffffff,             // tint base color
+    roughness: 0.6,
+    metalness: 0,
+    transmission: 0.3,
+    thickness: 2,
+    envMapIntensity: 1.2,
+    clearcoat: 1,
+    clearcoatRoughness: 0.1
+});
+
+                
+                const iceberg = new THREE.Mesh(baseGeometry, icebergMaterial);
+                
+                // Add random water puddles on top (representing melting)
+                const puddleCount = Math.floor(Math.random() * 3) + 1;
+                for (let p = 0; p < puddleCount; p++) {
+                    const puddleRadius = 0.3 + Math.random() * 0.6;
+                    const puddleGeometry = new THREE.CircleGeometry(puddleRadius, 12);
+                    const puddleMaterial = new THREE.MeshPhysicalMaterial({
+                        color: 0x4a85aa,
+                        roughness: 0,
+                        metalness: 0.1,
+                        transmission: 0.9,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    
+                    const puddle = new THREE.Mesh(puddleGeometry, puddleMaterial);
+                    puddle.rotation.x = -Math.PI / 2;
+                    
+                    // Position puddle on top of iceberg with slight randomization
+                    puddle.position.y = height/2 + 0.01;
+                    puddle.position.x = (Math.random() - 0.5) * baseSize * 0.6;
+                    puddle.position.z = (Math.random() - 0.5) * baseSize * 0.6;
+                    
+                    // Store original scale for animation
+                    puddle.userData.originalScale = puddle.scale.clone();
+                    puddle.userData.melting = true;
+                    
+                    iceberg.add(puddle);
+                }
+                
+                // Add some small secondary ice chunks around the main iceberg
+                const chunkCount = Math.floor(Math.random() * 4) + 1;
+                for (let c = 0; c < chunkCount; c++) {
+                    const chunkSize = 0.5 + Math.random() * 1.5;
+                    const chunkGeometry = new THREE.SphereGeometry(chunkSize, 8, 6);
+                    
+                    // Flatten and deform the chunk
+                    const chunkPositionAttr = chunkGeometry.getAttribute('position');
+                    const chunkVertex = new THREE.Vector3();
+                    
+                    for (let i = 0; i < chunkPositionAttr.count; i++) {
+                        chunkVertex.fromBufferAttribute(chunkPositionAttr, i);
+                        
+                        // Apply noise based on position
+                        const noise = (Math.random() - 0.5) * 0.3;
+                        chunkVertex.x += noise;
+                        chunkVertex.z += noise;
+                        
+                        // Flatten slightly
+                        chunkVertex.y *= 0.7;
+                        
+                        // Save modified vertex
+                        chunkPositionAttr.setXYZ(i, chunkVertex.x, chunkVertex.y, chunkVertex.z);
+                    }
+                    
+                    chunkGeometry.computeVertexNormals();
+                    
+                    const chunk = new THREE.Mesh(chunkGeometry, icebergMaterial.clone());
+                    
+                    // Position chunk around the main iceberg
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = baseSize * 0.8 + Math.random() * baseSize * 0.5;
+                    chunk.position.x = Math.cos(angle) * distance;
+                    chunk.position.z = Math.sin(angle) * distance;
+                    chunk.position.y = 0.2 + Math.random() * 0.3;
+                    
+                    chunk.rotation.set(
+                        Math.random() * Math.PI * 0.2,
+                        Math.random() * Math.PI * 2,
+                        Math.random() * Math.PI * 0.2
+                    );
+                    
+                    chunk.castShadow = true;
+                    chunk.receiveShadow = true;
+                    
+                    icebergGroup.add(chunk);
+                }
+                
+                // Add iceberg to group
+                iceberg.castShadow = true;
+                iceberg.receiveShadow = true;
+                icebergGroup.add(iceberg);
+                
+                // Random position but not too close to bear or factory
+                let x, z;
+                do {
+                    x = (Math.random() - 0.5) * 100;
+                    z = (Math.random() - 0.5) * 100;
+                } while (
+                    (Math.abs(x) < 15 && Math.abs(z) < 15) || // Not too close to bear
+                    (Math.abs(x - 40) < 20 && Math.abs(z + 30) < 20) // Not too close to factory
+                );
+                
+                // Position and rotate the iceberg
+                icebergGroup.position.set(x, height/2, z);
+                icebergGroup.rotation.y = Math.random() * Math.PI * 2;
+                
+                // Add to scene and track in array
+                scene.add(icebergGroup);
+                icebergs.push(icebergGroup);
+                
+                // Store the original y position for melting animation
+                icebergGroup.userData.originalHeight = height/2;
+                icebergGroup.userData.melting = true;
+            }
+            
+            // Create puzzle elements with icebergs in specific formation
+            createPuzzleElements(icebergs);
+            
+            return icebergs;
+        }
+        
+        function createPuzzleElements(icebergs) {
+            // Create special puzzle icebergs with clues
+            
+            // Create a path of 5 special icebergs leading to the factory            
+            const pathPoints = [
+                { x: 10, z: 10 },    // Starting point near bear
+                { x: 30, z: -5 },    // Second point
+                { x: 45, z: -15 },   // Third point  
+                { x: 50, z: -20 },   // Fourth point
+                { x: 60, z: -30 }    // Final point near factory
+            ];
+
+            // Create special marker icebergs at these positions
+            for (let i = 0; i < pathPoints.length; i++) {
+                const point = pathPoints[i];
+                
+                // Create a distinctive iceberg
+                const markerGeometry = new THREE.CylinderGeometry(1.5, 2, 4, 6);
+                
+                // Special material for marker icebergs - slightly blue tint
+                const markerMaterial = new THREE.MeshPhysicalMaterial({
+                    color: 0xadf5ff,
+                    roughness: 0.1,
+                    metalness: 0.1,
+                    transmission: 0.5,
+                    thickness: 2.0,
+                    clearcoat: 1.0,
+                    clearcoatRoughness: 0.1
+                });
+                
+                const markerIceberg = new THREE.Mesh(markerGeometry, markerMaterial);
+                markerIceberg.castShadow = true;
+                markerIceberg.receiveShadow = true;
+                
+                // Create a glowing effect around marker icebergs
+                const glowGeometry = new THREE.SphereGeometry(2.5, 16, 12);
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x5dadff,
+                    transparent: true,
+                    opacity: 0.2,
+                    side: THREE.BackSide
+                });
+                
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                
+                // Group the marker and glow
+                const markerGroup = new THREE.Group();
+                markerGroup.add(markerIceberg);
+                markerGroup.add(glow);
+                
+                // Add a symbol or clue based on which marker it is
+                let symbol;
+                
+                if (i === 0) {
+                    // First marker - arrow pointing north
+                    symbol = createArrowSymbol(0x3388ff);
+                    symbol.rotation.y = Math.PI / 2;
+                } else if (i === pathPoints.length - 1) {
+                    // Final marker - factory symbol
+                    symbol = createFactorySymbol();
+                } else {
+                    // Intermediate markers - numbered hints
+                    symbol = createNumberSymbol(i, 0x3388ff);
+                }
+                
+                symbol.position.y = 2.5;
+                markerGroup.add(symbol);
+                
+                // Position the marker
+                markerGroup.position.set(point.x, 2, point.z);
+                
+                // Add to scene
+                scene.add(markerGroup);
+                
+                // Add to icebergs array for tracking
+                markerGroup.userData.originalHeight = 2;
+                markerGroup.userData.isMarker = true;
+                markerGroup.userData.markerIndex = i;
+                markerGroup.userData.melting = true;
+                icebergs.push(markerGroup);
+            }
+        }
+        
+        function createArrowSymbol(color = 0xffffff) {
+            const arrowGroup = new THREE.Group();
+            
+            // Arrow shaft
+            const shaftGeometry = new THREE.BoxGeometry(0.2, 0.1, 1);
+            const arrowMaterial = new THREE.MeshBasicMaterial({ color: color });
+            const shaft = new THREE.Mesh(shaftGeometry, arrowMaterial);
+            arrowGroup.add(shaft);
+            
+            // Arrow head
+            const headGeometry = new THREE.ConeGeometry(0.3, 0.6, 8);
+            const head = new THREE.Mesh(headGeometry, arrowMaterial);
+            head.position.z = 0.8;
+            head.rotation.x = -Math.PI / 2;
+            arrowGroup.add(head);
+            
+            return arrowGroup;
+        }
+        
+        function createNumberSymbol(num, color = 0xffffff) {
+            const group = new THREE.Group();
+            
+            // Create a circular background
+            const bgGeometry = new THREE.CircleGeometry(0.4, 16);
+            const bgMaterial = new THREE.MeshBasicMaterial({ color: color });
+            const bg = new THREE.Mesh(bgGeometry, bgMaterial);
+            bg.rotation.x = -Math.PI / 2;
+            group.add(bg);
+            
+            // Create text with the number
+            const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            
+            // Since we don't have TextGeometry available, create a simple shape for the number
+            let numberMesh;
+            
+            switch(num) {
+                case 1:
+                    const oneGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.05);
+                    numberMesh = new THREE.Mesh(oneGeometry, textMaterial);
+                    numberMesh.position.y = 0.05;
+                    break;
+                case 2:
+                    numberMesh = createSimpleNumberTwo(textMaterial);
+                    break;
+                case 3:
+                    numberMesh = createSimpleNumberThree(textMaterial);
+                    break;
+                case 4:
+                    numberMesh = createSimpleNumberFour(textMaterial);
+                    break;
+                default:
+                    const defaultGeometry = new THREE.BoxGeometry(0.3, 0.5, 0.05);
+                    numberMesh = new THREE.Mesh(defaultGeometry, textMaterial);
+                    break;
+            }
+            
+            numberMesh.position.z = 0.05;
+            numberMesh.rotation.x = Math.PI / 2;
+            group.add(numberMesh);
+            
+            return group;
+        }
+        
+        function createSimpleNumberTwo(material) {
+            const group = new THREE.Group();
+            
+            // Top horizontal line
+            const topLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.3, 0.1, 0.05),
+                material
+            );
+            topLine.position.y = 0.2;
+            group.add(topLine);
+            
+            // Middle horizontal line
+            const middleLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.3, 0.1, 0.05),
+                material
+            );
+            middleLine.position.y = 0;
+            group.add(middleLine);
+            
+            // Bottom horizontal line
+            const bottomLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.3, 0.1, 0.05),
+                material
+            );
+            bottomLine.position.y = -0.2;
+            group.add(bottomLine);
+            
+            // Top-right vertical line
+            const topRightLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 0.2, 0.05),
+                material
+            );
+            topRightLine.position.set(0.1, 0.1, 0);
+            group.add(topRightLine);
+            
+            // Bottom-left vertical line
+            const bottomLeftLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 0.2, 0.05),
+                material
+            );
+            bottomLeftLine.position.set(-0.1, -0.1, 0);
+            group.add(bottomLeftLine);
+            
+            return group;
+        }
+        
+        function createSimpleNumberThree(material) {
+            const group = new THREE.Group();
+            
+            // Top horizontal line
+            const topLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.3, 0.1, 0.05),
+                material
+            );
+            topLine.position.y = 0.2;
+            group.add(topLine);
+            
+            // Middle horizontal line
+            const middleLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.3, 0.1, 0.05),
+                material
+            );
+            middleLine.position.y = 0;
+            group.add(middleLine);
+            
+            // Bottom horizontal line
+            const bottomLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.3, 0.1, 0.05),
+                material
+            );
+            bottomLine.position.y = -0.2;
+            group.add(bottomLine);
+            
+            // Right vertical line
+            const rightLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 0.5, 0.05),
+                material
+            );
+            rightLine.position.x = 0.1;
+            group.add(rightLine);
+            
+            return group;
+        }
+        
+        function createSimpleNumberFour(material) {
+            const group = new THREE.Group();
+            
+            // Left vertical line
+            const leftLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 0.4, 0.05),
+                material
+            );
+            leftLine.position.set(-0.1, 0.05, 0);
+            group.add(leftLine);
+            
+            // Top horizontal line
+            const topLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.3, 0.1, 0.05),
+                material
+            );
+            topLine.position.set(0, 0, 0);
+            group.add(topLine);
+            
+            // Right vertical line
+            const rightLine = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 0.5, 0.05),
+                material
+            );
+            rightLine.position.set(0.1, 0, 0);
+            group.add(rightLine);
+            
+            return group;
+        }
+        
+        function createFactorySymbol() {
+    const group = new THREE.Group();
+    
+    // Factory building
+    const buildingGeometry = new THREE.BoxGeometry(0.5, 0.3, 0.1);
+    const buildingMaterial = new THREE.MeshBasicMaterial({ color: 0xdddddd });
+    const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+    group.add(building);
+    
+    // Chimney
+    const chimneyGeometry = new THREE.CylinderGeometry(0.06, 0.08, 0.3, 8);
+    const chimneyMaterial = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+    const chimney = new THREE.Mesh(chimneyGeometry, chimneyMaterial);
+    chimney.position.set(0.15, 0.3, 0);
+    chimney.rotation.x = -Math.PI / 2;
+    group.add(chimney);
+    
+    // Create multiple smoke particles for more realistic effect
+    const smokeParticles = new THREE.Group();
+    group.add(smokeParticles);
+    
+    // Create multiple smoke puffs
+    const numSmokePuffs = 8;
+    const smokePuffs = [];
+    
+    for (let i = 0; i < numSmokePuffs; i++) {
+        // Create smoke with varying sizes
+        const size = 0.05 + Math.random() * 0.1;
+        const smokeGeometry = new THREE.SphereGeometry(size, 8, 6);
+        
+        // Create gradient material for more realistic smoke
+        const smokeMaterial = new THREE.MeshStandardMaterial({ 
+            color: new THREE.Color(0xeeeeee),
+            transparent: true,
+            opacity: 0.6 - (i * 0.05),
+            roughness: 1,
+            metalness: 0
+        });
+        
+        const smoke = new THREE.Mesh(smokeGeometry, smokeMaterial);
+        
+        // Position smoke puffs in a rising pattern
+        const xOffset = 0.15 + (Math.random() * 0.1 - 0.05);
+        const yOffset = 0.5 + (i * 0.12);
+        const zOffset = (Math.random() * 0.1 - 0.05);
+        
+        smoke.position.set(xOffset, yOffset, zOffset);
+        smoke.scale.y = 1.2 + (i * 0.1); // Make smoke more elongated as it rises
+        
+        // Slightly rotate each puff for variety
+        smoke.rotation.z = Math.random() * Math.PI;
+        
+        // Add animation data to the smoke puff
+        smoke.userData = {
+            initialY: smoke.position.y,
+            speed: 0.001 + (Math.random() * 0.002),
+            wiggle: 0.0005 + (Math.random() * 0.001),
+            wiggleOffset: Math.random() * Math.PI * 2
+        };
+        
+        smokeParticles.add(smoke);
+        smokePuffs.push(smoke);
+    }
+    
+    // Add animation function to the group
+    group.userData.animateSmoke = function(time) {
+        smokeParticles.children.forEach((smoke, index) => {
+            // Move smoke upward
+            smoke.position.y += smoke.userData.speed;
+            
+            // Add slight horizontal movement (wiggle)
+            smoke.position.x = 0.15 + Math.sin(time * 0.5 + smoke.userData.wiggleOffset) * smoke.userData.wiggle;
+            
+            // Make smoke fade out as it rises
+            smoke.material.opacity = Math.max(0, 0.6 - (smoke.position.y - smoke.userData.initialY) * 0.3);
+            
+            // Make smoke expand as it rises
+            const expansionFactor = 1 + (smoke.position.y - smoke.userData.initialY) * 0.2;
+            smoke.scale.set(expansionFactor, expansionFactor, expansionFactor);
+            
+            // Reset smoke puff when it gets too high or fades out
+            if (smoke.position.y > smoke.userData.initialY + 1.5 || smoke.material.opacity <= 0) {
+                smoke.position.y = smoke.userData.initialY;
+                smoke.position.x = 0.15 + (Math.random() * 0.1 - 0.05);
+                smoke.position.z = (Math.random() * 0.1 - 0.05);
+                smoke.material.opacity = 0.6;
+                smoke.scale.set(1, 1.2, 1);
+                smoke.userData.wiggleOffset = Math.random() * Math.PI * 2;
+            }
+        });
+    };
+    
+    return group;
+}
+        
+
+        function setupEventListeners() {
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    
+    // Keyboard controls
+    document.addEventListener('keydown', (event) => {
+        keysPressed[event.code] = true;
+        
+        switch (event.code) {
+            case 'ArrowUp':
+            case 'KeyW':
+                moveForward = true;
+                break;
+            case 'ArrowDown':
+            case 'KeyS':
+                moveBackward = true;
+                break;
+            case 'ArrowLeft':
+            case 'KeyA':
+                moveLeft = true;
+                break;
+            case 'ArrowRight':
+            case 'KeyD':
+                moveRight = true;
+                break;
+        }
+    });
+    
+    document.addEventListener('keyup', (event) => {
+        keysPressed[event.code] = false;
+        
+        switch (event.code) {
+            case 'ArrowUp':
+            case 'KeyW':
+                moveForward = false;
+                break;
+            case 'ArrowDown':
+            case 'KeyS':
+                moveBackward = false;
+                break;
+            case 'ArrowLeft':
+            case 'KeyA':
+                moveLeft = false;
+                break;
+            case 'ArrowRight':
+            case 'KeyD':
+                moveRight = false;
+                break;
+        }
+    });
+    
+    // Mouse controls for camera direction
+    document.addEventListener('mousemove', (event) => {
+        if (gameStarted) {
+            // Rotate bear based on mouse movement
+            bear.rotation.y -= event.movementX * 0.01;
+            
+            // Update camera position based on new bear rotation
+            updateCameraPosition();
+        }
+    });
+
+
+ // LAST FEATURE :) --->  Touch Controls (Mobile)
+
+        let touchStartX = 0;
+    let touchStartY = 0;
+
+    document.addEventListener('touchstart', (event) => {
+        const touch = event.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+    });
+
+    document.addEventListener('touchmove', (event) => {
+        const touch = event.touches[0];
+        const deltaX = touch.clientX - touchStartX;
+        const deltaY = touch.clientY - touchStartY;
+
+        if (gameStarted) {
+            // Simulate bear rotation with horizontal swipe
+            bear.rotation.y -= deltaX * 0.002;
+            updateCameraPosition();
+
+            // Simulate movement with vertical swipe
+            if (deltaY < -30) {
+                moveForward = true;
+                moveBackward = false;
+            } else if (deltaY > 30) {
+                moveBackward = true;
+                moveForward = false;
+            } else {
+                moveForward = false;
+                moveBackward = false;
+            }
+        }
+    });
+
+    document.addEventListener('touchend', () => {
+        moveForward = false;
+        moveBackward = false;
+    });
+}
+
+        function updateCameraPosition() {
+            // Position camera behind the bear
+            const bearDirection = new THREE.Vector3(0, 0, -1);
+            bearDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), bear.rotation.y);
+            
+            const cameraOffset = bearDirection.clone().multiplyScalar(-8);
+            cameraOffset.y = 5;
+            
+            camera.position.copy(bear.position).add(cameraOffset);
+            camera.lookAt(bear.position.clone().add(new THREE.Vector3(0, 2, 0)));
+        }
+        
+
+        function launchConfetti() {
+    const canvas = document.getElementById('confettiCanvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+
+    const particles = [];
+    for (let i = 0; i < 1000; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height - canvas.height,
+            color: `hsl(${Math.random() * 360}, 100%, 60%)`,
+            radius: Math.random() * 4 + 2,
+            speed: Math.random() * 3 + 2,
+            angle: Math.random() * 2 * Math.PI,
+        });
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+            p.y += p.speed;
+            p.x += Math.sin(p.angle);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+        });
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+}
+
+function clearCanvas() {
+    const canvas = document.getElementById('confettiCanvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta()*7; // bear speed
+            const elapsedTime = clock.getElapsedTime();
+            
+            // Handle bear movement
+            // Dampen velocity
+            velocity.x -= velocity.x * 10.0 * delta;
+            velocity.z -= velocity.z * 10.0 * delta;
+            
+            // Set direction based on controls
+            direction.z = Number(moveForward) - Number(moveBackward);
+            direction.x = Number(moveLeft) - Number(moveRight);
+            direction.normalize();
+            
+            // Check if bear is moving and update walking state
+            isWalking = (moveForward || moveBackward || moveLeft || moveRight);
+            
+            // Move bear based on direction and rotation
+            if (moveForward || moveBackward) {
+                velocity.z -= direction.z * 30.0 * delta;
+            }
+            if (moveLeft || moveRight) {
+                velocity.x -= direction.x * 30.0 * delta;
+            }
+            
+            // Apply rotation to movement direction
+            const movementVector = new THREE.Vector3(velocity.x, 0, velocity.z);
+            movementVector.applyAxisAngle(new THREE.Vector3(0, 1, 0), bear.rotation.y);
+            
+            // Move bear
+            bear.position.x += movementVector.x * delta;
+            bear.position.z += movementVector.z * delta;
+            
+            // Update camera position to follow bear
+            updateCameraPosition();
+            
+            // Animate bear walking
+            animateBearWalking();
+            
+            // Animate snow particles
+            animateSnow();
+            
+            
+            // Animate icebergs (melting/restoring)
+            animateIcebergs();
+            
+            // Animate smoke particles
+            const smokeParticles = factory.children[3].children;
+            smokeParticles.forEach(particle => {
+                particle.position.add(particle.userData.velocity);
+                
+                // Reset particles that have risen too high
+                if (particle.position.y > 25) {
+                    particle.position.set(
+                        3 + (Math.random() - 0.5) * 2,
+                        12,
+                        3 + (Math.random() - 0.5) * 2
+                    );
+                }
+            });
+            
+            // Check if bear is near factory
+            const distanceToFactory = bear.position.distanceTo(factory.position);
+            
+            if (distanceToFactory < 10 && !factoryFound) {
+                factoryFound = true;
+                
+                // Show success message
+                const successDiv = document.createElement('div');
+                successDiv.style.position = 'absolute';
+                successDiv.style.top = '50%';
+                successDiv.style.left = '50%';
+                successDiv.style.transform = 'translate(-50%, -50%)';
+                successDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                successDiv.style.color = 'white';
+                successDiv.style.padding = '20px';
+                successDiv.style.borderRadius = '10px';
+                successDiv.style.textAlign = 'center';
+                // successDiv.innerHTML = '<h2>Success!</h2><p>You found the factory and stopped the pollution!</p><p>The polar bear can now live in a healthier environment.</p>';
+                successDiv.innerHTML = '<h2>نجاح!</h2><p>لقد وجدت المصنع وأوقفت التلوث!</p><p>الآن يمكن للدب القطبي أن يعيش في بيئة صحية.</p>';
+
+                document.getElementById('gameContainer').appendChild(successDiv);
+
+                launchConfetti();
+
+                // 7ayed l msg de success after 10sec :) 
+                setTimeout(() => {
+                            document.getElementById('gameContainer').removeChild(successDiv);
+                        }, 10000);
+
+                // Gradually lower temperature
+                const lowerTemp = setInterval(() => {
+                    if (temperature > -5) {
+                        temperature -= 0.5;
+                        updateThermometer();
+                        
+                        // Gradually change sky color
+                        const t = (5 - temperature) / 10; // 0 to 1 as temp goes from 5 to -5
+                        scene.background.lerpColors(pollutedSkyColor, skyColor, t);
+                        scene.fog.color.lerpColors(pollutedSkyColor, skyColor, t);
+                        
+                        // Gradually reduce smoke opacity
+                        smokeParticles.forEach(particle => {
+                            particle.material.opacity = 0.7 * (1 - t);
+                        });
+                    } else {
+                        clearInterval(lowerTemp);
+                    }
+                }, 200);
+            }
+            
+            // Check if bear is near any of the marker icebergs
+            icebergs.forEach(iceberg => {
+                if (iceberg.userData.isMarker) {
+                    const distanceToMarker = bear.position.distanceTo(iceberg.position);
+                    
+                    // If bear is close to a marker and hasn't found it yet
+                    if (distanceToMarker < 5 && !iceberg.userData.found  && !factoryFound) {
+                        iceberg.userData.found = true;
+                        foundCheckpoints++;
+                        
+                        // Show checkpoint message
+                        const checkpointDiv = document.createElement('div');
+                        checkpointDiv.style.position = 'absolute';
+                        checkpointDiv.style.top = '30%';
+                        checkpointDiv.style.left = '50%';
+                        checkpointDiv.style.transform = 'translate(-50%, -50%)';
+                        checkpointDiv.style.backgroundColor = 'rgba(0, 100, 200, 0.7)';
+                        checkpointDiv.style.color = 'white';
+                        checkpointDiv.style.padding = '15px';
+                        checkpointDiv.style.borderRadius = '10px';
+                        checkpointDiv.style.textAlign = 'center';
+                        checkpointDiv.style.zIndex = '100';
+                        
+                        // if (iceberg.userData.markerIndex === 0) {
+                        //     checkpointDiv.innerHTML = '<h3>First Checkpoint Found!</h3><p>Follow the markers to find the factory.</p>';
+                        // } else if (iceberg.userData.markerIndex === icebergs.filter(i => i.userData.isMarker).length - 1) {
+                        //     checkpointDiv.innerHTML = '<h3>Last Checkpoint Found!</h3><p>The factory is close. Go stop the pollution!</p>';
+                        // } else {
+                        //     checkpointDiv.innerHTML = `<h3>Checkpoint ${iceberg.userData.markerIndex + 1} Found!</h3><p>Keep following the path.</p>`;
+                        // }
+
+                        if (iceberg.userData.markerIndex === 0) {
+    checkpointDiv.innerHTML = '<h3>تم العثور على أول نقطة وصول!</h3><p>اتبع العلامات للعثور على المصنع.</p>';
+} else if (iceberg.userData.markerIndex === icebergs.filter(i => i.userData.isMarker).length - 1) {
+    checkpointDiv.innerHTML = '<h3>تم العثور على آخر نقطة وصول!</h3><p>المصنع قريب. اذهب وأوقف التلوث!</p>';
+} else {
+    checkpointDiv.innerHTML = `<h3>تم العثور على نقطة وصول رقم ${iceberg.userData.markerIndex + 1}!</h3><p>واصل اتباع الطريق.</p>`;
+}
+
+                        
+                        document.getElementById('gameContainer').appendChild(checkpointDiv);
+                        
+                        // Remove the message after a few seconds
+                        setTimeout(() => {
+                            document.getElementById('gameContainer').removeChild(checkpointDiv);
+                        }, 3000);
+                    }
+                }
+            });
+            
+            // Render scene
+            renderer.render(scene, camera);
+        }
+        
+        function updateThermometer() {
+            // Update thermometer display
+            const tempHeight = (temperature + 10) / 30 * 100; // Map -10°C to 20°C to 0-100% :)
+            document.getElementById('temperature').style.height = tempHeight + '%';
+            document.getElementById('tempValue').textContent = temperature.toFixed(1) + '°C';
+        }
+        
+        // Start the game : made for MSO 12th edition ... ENJOY
+        init();
+    </script>
+</body>
+</html>

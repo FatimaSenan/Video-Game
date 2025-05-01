@@ -1,0 +1,245 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+
+.enigme2-body-container{
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.enigme2-container{
+    position: relative;
+    height: 75vh;
+    display: flex;
+    justify-content: space-around;
+    gap: 5px;
+}
+
+.enigme2-canvas{
+    background: url("./images/ice_mountain.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center 100%;
+    position: relative;
+    border: 2px solid;
+}
+
+.enigme2-interactions{
+    height: 100%;
+    width: 300px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    overflow: auto;
+}
+.enigme2-interactions h2 {
+    text-align: center;
+    margin-bottom: 10px;
+    color: #2c3e50;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+.enigme2-thought-bubble {
+    position: absolute;
+    background: white;
+    border: 3px solid #000;
+    border-radius: 15px;
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+    transform: translateX(-50%); /* Center horizontally relative to position */
+}
+
+.enigme2-thought-bubble::after {
+    content: '';
+    position: absolute;
+    right: 160px; /* Adjust arrow position to left side */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border: 10px solid transparent;
+    border-left-color: #000;
+}
+
+.bubble-fish {
+    width: 40px;
+    height: auto;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+
+
+.enigme2-start-button:hover , .enigme2-replay:hover{
+    background-color: #2980b9;
+    transform: scale(1.02);
+}
+
+.enigme2-start-button:active {
+    transform: scale(0.95);
+}
+
+
+/* Temperature Slider */
+
+
+.enigme2-temperature-slider {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.vertical-slider {
+    -webkit-appearance: slider-vertical;
+    width: 30px;
+    height: 150px;
+    background: linear-gradient(to top, #00f, #0ff, #ff0, #f00);
+    border-radius: 15px;
+    padding: 5px;
+}
+
+.vertical-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 25px;
+    height: 25px;
+    background: #fff;
+    border-radius: 50%;
+    border: 2px solid #333;
+    cursor: pointer;
+}
+
+.temperature-display {
+
+    margin-top: 15px;
+    font-size: 1.2em;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.637);
+    padding: 5px 15px;
+    border-radius: 10px;
+}
+.wind-notification-container{
+    margin-top: 50px;
+}
+.wind-notification-container span{
+    display: block;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+.wind-notification {
+    font-style: italic;
+    color: #fff; 
+    font-size: 1.1rem;
+    background: rgba(0, 0, 0, 0.342);
+    padding: 10px 20px; 
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.322); 
+    animation: fadeSlide 2s ease-in-out infinite;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+    display: flex; 
+    transform: translateX(-50%); 
+    z-index: 1000; 
+  }
+  
+  
+  @keyframes fadeSlide {
+    0% {
+      opacity: 0.2;
+      transform: translateX(-10px);
+    }
+    50% {
+      opacity: 1;
+      transform: translateX(10px);
+    }
+    100% {
+      opacity: 0.2;
+      transform: translateX(-10px);
+    }
+  }
+  
+
+
+.enigme2-notification {
+    position: absolute;
+    top: 30px;
+    right: 200px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    max-width: 300px;
+    text-align: center;
+}
+
+.notification-content p {
+    margin: 10px 0;
+    font-size: 0.9em;
+    color: #333;
+}
+
+.enigme2-close-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    cursor: pointer;
+    color: #666;
+}
+
+.enigme2-arrow {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+}
+
+.enigme2-arrow::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-top: 3px solid #0a0606;
+    border-right: 3px solid #0a0606;
+}
+
+.slider-arrow {
+    right: -40px;
+}
+
+.slider-arrow::before {
+    transform: rotate(45deg);
+}
+
+
+.enigme2-start-button, .enigme2-replay {
+    color: white;
+    background-color: #3498db;
+    padding: 10px 15px;
+    width: 120px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.2s, background-color 0.2s;
+}
