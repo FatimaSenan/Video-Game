@@ -21,7 +21,15 @@ function Enigme2() {
     const [bearHasFallen, setBearHasFallen] = useState(false);
     const [gameEnded, setGameEnded] = useState(false);
     const [ableToDrag, setAbleToDrag] = useState(false);
+    const [statusAndMessage, setStatusAndMessage] = useState(null);
 
+    const messagesList = [
+        "الدب جائع.. يبدو أنه يفكر في شيء ما.",
+        "عليك أن تتحكم في الرياح بشكل جيد.",
+        "عليك أن تتحكم في الشمس بشكل جيد.",
+        "عليك أن تتحكم في درجة الحرارة بشكل جيد.",
+        "لقد قمت بعمل رائع."
+      ];
 
     const canvasRef = useRef(null);
     const width = 1200;
@@ -168,6 +176,7 @@ function Enigme2() {
                         
                         timeoutId = setTimeout(() => {
                             setBubblePosition({ x: bubbleX, y: bubbleY });
+                            setStatusAndMessage({status: 'warning', message: messagesList[0]});
                             setSnowing(true);
                             setTimeout(() => {
                                 setBubblePosition(null);
@@ -294,6 +303,14 @@ function Enigme2() {
     }, [snowing, windDirection, temperature, sunPos.x]);
 
     useEffect(() => {
+        if(windDirection === 'right'){
+            setStatusAndMessage({status: 'warning', message: messagesList[2]});
+        }else if(windDirection === 'left' && temperature >= 20){
+            setStatusAndMessage({status: 'warning', message: messagesList[3]});
+        }else{
+            setStatusAndMessage({status: 'stable', message: messagesList[4]});
+
+        }
         if (temperature === 10 && windDirection === "left" && bearHasFallen && !bearMovingToFish) {
             const timer = setTimeout(() => {
                 setBearMovingToFish(true);
@@ -438,6 +455,8 @@ function Enigme2() {
                         </div>
                         
                     )}
+
+                    {statusAndMessage && gameStarted && <div className={`enigme2-status-indicator ${statusAndMessage?.status}`}>{statusAndMessage?.message}</div>}
 
                 </div>
             </div>
