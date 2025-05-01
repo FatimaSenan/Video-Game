@@ -18,8 +18,8 @@ cd Video-Game
 ```bash
 npm install
 ```
-```bash
 # 4. Run the project
+```bash
 npm start
 ```
 
