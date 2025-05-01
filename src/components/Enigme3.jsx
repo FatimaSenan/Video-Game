@@ -14,6 +14,8 @@ function Enigme3() {
       <div className="enigme3-island" id="island"></div>
     </>
   );
+  const [isIcebergCracked, setIsIcebergCracked] = useState(false); // New state for cracked iceberg
+  const [congratulationsVisible, setCongratulationsVisible] = useState(false); // State for showing congrats message
 
   useEffect(() => {
     setTimeout(() => {
@@ -22,7 +24,7 @@ function Enigme3() {
       setButtonsVisible(true);
       setImageArea(
         <>
-          <div className="enigme3-iceberg cracked"></div>
+          <div className={`enigme3-iceberg ${isIcebergCracked ? 'cracked' : ''}`}></div>
           <img
             src="/images/download.png"
             alt="Ours sur la glace fissurée"
@@ -33,14 +35,14 @@ function Enigme3() {
         </>
       );
     }, 3000);
-  }, []);
+  }, [isIcebergCracked]);
 
   const choose = (option) => {
     if (option === 'tapis') {
       setResult("قرار جيد! الدب وزّع وزنه، فانخفض الضغط وعبَر بأمان.");
       setImageArea(
         <>
-          <div className="enigme3-iceberg enigme3-slide-to-island"></div>
+          <div className="enigme3-iceberg" style={{ transition: 'none' }}></div> {/* Disable animation */}
           <img src="/images/gg.png" alt="Bravo !" className="enigme3-gg-img" />
           <div className="enigme3-island" style={{ display: 'block' }}></div>
           <div className="enigme3-water"></div>
@@ -48,6 +50,10 @@ function Enigme3() {
       );
       setAlertMessage('✅ رائع جدًا! !');
       setAlertType('success');
+      setIsIcebergCracked(true); // Mark iceberg as cracked after successful choice
+      setTimeout(() => {
+        setCongratulationsVisible(true); // Show congrats message after success
+      }, 2000); // Delay for 2 seconds before showing congrats message
     } else {
       setResult("خيار سيئ! لا تزال الضغوط قوية، تنكسر الجليد ويسقط الدب!");
       setImageArea(
@@ -80,7 +86,6 @@ function Enigme3() {
         </div>
       )}
 
-
       <div className="enigme3-image-area">
         {imageArea}
       </div>
@@ -95,6 +100,13 @@ function Enigme3() {
       <div className="enigme3-result">
         {result}
       </div>
+
+      {congratulationsVisible && (
+        <div className="enigme3-congratulations">
+          <h2>تهانينا! لقد عبرت الدب الجليدي بنجاح!</h2>
+          <p>أنت بطل!</p>
+        </div>
+      )}
     </div>
   );
 }

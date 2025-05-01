@@ -46,11 +46,7 @@
   50% { transform: translateY(10px); }
 }
 
-.enigme3-title {
-  margin-top: 2rem;
-  color: #003c5f;
-  text-shadow: 1px 1px 4px #fff;
-}
+
 
 .enigme3-alert {
   position: fixed;
@@ -202,17 +198,28 @@
   width: 100%;
   height: 100px;
   bottom: 0;
-  background-color: #4fc3f7;
   z-index: 0;
 }
 
-.enigme3-island {
-  position: absolute;
-  bottom: 250px;
-  left: 70%;
-  width: 100px;
-  height: 60px;
-  background-color: #ffe082;
-  border-radius: 50%;
-  z-index: 0;
+.enigme3-congratulations {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 2rem;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 1.5rem;
+  color: #4caf50;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  animation: congratsAnimation 1.5s ease-out;
 }
+
+@keyframes congratsAnimation {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+
+
