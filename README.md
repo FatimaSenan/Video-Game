@@ -3,7 +3,7 @@
 ## 🛠️ Complete Setup & Workflow (All in Terminal)
 
 ### 1. First-Time Setup
-###All the work will be in VsCode terminal
+### All the work will be in VsCode terminal
 # 1. Download the project
 ```bash
 git clone https://github.com/FatimaSenan/Video-Game.git
