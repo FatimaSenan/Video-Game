@@ -25,5 +25,5 @@ npm start
 
 If there is any changes in the project (100% aykun hit ba9i kankhdem) make sure to use this line
 ```bash
-git pull origin main
+git pull -f origin main
 ```
