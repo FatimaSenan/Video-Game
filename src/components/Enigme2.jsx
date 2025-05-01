@@ -56,9 +56,9 @@ function Enigme2() {
     useEffect(() => {
         if (!gameStarted) return;
 
-        if (showNotification) {
+        if (showNotification === "true") {
             const timer = setTimeout(() => {
-                setShowNotification(false);
+                setShowNotification("done");
                 setAbleToDrag(true);
             }, 10000);
             return () => {
@@ -180,7 +180,7 @@ function Enigme2() {
                             setSnowing(true);
                             setTimeout(() => {
                                 setBubblePosition(null);
-                                setShowNotification(true);
+                                setShowNotification("true");
                                 if (!showWind) {
                                     setTimeout(() => {
                                         setShowWind(true);
@@ -303,9 +303,9 @@ function Enigme2() {
     }, [snowing, windDirection, temperature, sunPos.x]);
 
     useEffect(() => {
-        if(windDirection === 'right'){
+        if(windDirection === 'right' && showNotification=== "done"){
             setStatusAndMessage({status: 'warning', message: messagesList[2]});
-        }else if(windDirection === 'left' && temperature >= 20){
+        }else if(windDirection === 'left' && temperature >= 20 && showNotification=== "done"){
             setStatusAndMessage({status: 'warning', message: messagesList[3]});
         }else{
             setStatusAndMessage({status: 'stable', message: messagesList[4]});
@@ -369,7 +369,7 @@ function Enigme2() {
                 }
 
                 <AnimatePresence>
-                    {showNotification && (
+                    {showNotification === "true" && (
                         <motion.div
                             className="enigme2-notification"
                             initial={{ opacity: 0, y: 20 }}
@@ -381,7 +381,7 @@ function Enigme2() {
                             <div className="notification-content">
                                 <button 
                                     className="enigme2-close-btn"
-                                    onClick={() => {setShowNotification(false); setAbleToDrag(true);}}
+                                    onClick={() => {setShowNotification("done"); setAbleToDrag(true);}}
                                 >
                                     ×
                                 </button>
@@ -456,7 +456,7 @@ function Enigme2() {
                         
                     )}
 
-                    {statusAndMessage && gameStarted && <div className={`enigme2-status-indicator ${statusAndMessage?.status}`}>{statusAndMessage?.message}</div>}
+                    {statusAndMessage && gameStarted && showNotification=== "done" && (<div className={`enigme2-status-indicator ${statusAndMessage?.status}`}>{statusAndMessage?.message}</div>)}
 
                 </div>
             </div>
