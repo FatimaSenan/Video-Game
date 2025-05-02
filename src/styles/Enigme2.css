@@ -286,7 +286,7 @@
     .vertical-slider {
         -webkit-appearance: slider-vertical;
         width: 30px;
-        height: 90px;
+        height: 100px;
         background: linear-gradient(to top, #00f, #0ff, #ff0, #f00);
         border-radius: 15px;
         padding: 5px;
