@@ -14,15 +14,17 @@ function Enigme3() {
       <div className="enigme3-island" id="island"></div>
     </>
   );
+  const [isIcebergCracked, setIsIcebergCracked] = useState(false); // New state for cracked iceberg
+  const [congratulationsVisible, setCongratulationsVisible] = useState(false); // State for showing congrats message
 
   useEffect(() => {
     setTimeout(() => {
-      setAlertMessage('⚠️ Attention ! L\'iceberg est sur le point de se fissurer !');
+      setAlertMessage('⚠️ انتبه! الجبل الجليدي على وشك أن يتشقق!');
       setAlertType('warning');
       setButtonsVisible(true);
       setImageArea(
         <>
-          <div className="enigme3-iceberg cracked"></div>
+          <div className={`enigme3-iceberg ${isIcebergCracked ? 'cracked' : ''}`}></div>
           <img
             src="/images/download.png"
             alt="Ours sur la glace fissurée"
@@ -33,23 +35,27 @@ function Enigme3() {
         </>
       );
     }, 3000);
-  }, []);
+  }, [isIcebergCracked]);
 
   const choose = (option) => {
     if (option === 'tapis') {
-      setResult("Bonne décision ! L'ours répartit son poids, la pression diminue et il traverse sans danger.");
+      setResult("قرار جيد! الدب وزّع وزنه، فانخفض الضغط وعبَر بأمان.");
       setImageArea(
         <>
-          <div className="enigme3-iceberg enigme3-slide-to-island"></div>
+          <div className="enigme3-iceberg" style={{ transition: 'none' }}></div> {/* Disable animation */}
           <img src="/images/gg.png" alt="Bravo !" className="enigme3-gg-img" />
           <div className="enigme3-island" style={{ display: 'block' }}></div>
           <div className="enigme3-water"></div>
         </>
       );
-      setAlertMessage('✅ Très bien !');
+      setAlertMessage('✅ رائع جدًا! !');
       setAlertType('success');
+      setIsIcebergCracked(true); // Mark iceberg as cracked after successful choice
+      setTimeout(() => {
+        setCongratulationsVisible(true); // Show congrats message after success
+      }, 2000); // Delay for 2 seconds before showing congrats message
     } else {
-      setResult("Mauvais choix ! La pression reste forte, la glace se casse et l'ours tombe !");
+      setResult("خيار سيئ! لا تزال الضغوط قوية، تنكسر الجليد ويسقط الدب!");
       setImageArea(
         <>
           <div className="enigme3-iceberg cracked"></div>
@@ -62,7 +68,7 @@ function Enigme3() {
           <div className="enigme3-water"></div>
         </>
       );
-      setAlertMessage('❌ Mauvais choix, recommencement dans 3 secondes…');
+      setAlertMessage('❌ خيار سيئ، سيتم البدء من جديد خلال 3 ثوانٍ...');
       setAlertType('error');
       setButtonsVisible(false);
 
@@ -80,22 +86,27 @@ function Enigme3() {
         </div>
       )}
 
-      <h1 className="enigme3-title">Énigme : L'ours et la glace</h1>
-
       <div className="enigme3-image-area">
         {imageArea}
       </div>
 
       {buttonsVisible && (
         <div className="enigme3-buttons">
-          <button onClick={() => choose('tapis')}>Transformer l'ours en tapis</button>
-          <button onClick={() => choose('normal')}>Garder sa forme normale</button>
+          <button onClick={() => choose('tapis')}>تحويل الدب إلى بساط.</button>
+          <button onClick={() => choose('normal')}>الحفاظ على شكله الطبيعي</button>
         </div>
       )}
 
       <div className="enigme3-result">
         {result}
       </div>
+
+      {congratulationsVisible && (
+        <div className="enigme3-congratulations">
+          <h2>تهانينا! لقد عبرت الدب الجليدي بنجاح!</h2>
+          <p>أنت بطل!</p>
+        </div>
+      )}
     </div>
   );
 }

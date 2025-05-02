@@ -20,7 +20,7 @@ npm install
 ```
 # 4. Run the project
 ```bash
-npm start
+npm run dev
 ```
 
 If there is any changes in the project (100% aykun hit ba9i kankhdem) make sure to use this line
