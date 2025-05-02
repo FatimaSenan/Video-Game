@@ -263,7 +263,7 @@
     border: 1px solid #FFC107;
 }
 
-@media (max-height: 690px){
+@media (max-height: 866px){
     .enigme2-interactions{
         height: 100%;
         width: 300px;
